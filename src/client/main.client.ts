@@ -5,10 +5,14 @@ import {
 	showQuestion,
 	updateTimer,
 	showResult,
+	showExplanation,
 	showEliminated,
 	showGhost,
 	showFinished,
 	hideAll,
+	updateStickerCount,
+	showStickerCollected,
+	hideStickerLabel,
 } from "./ui/quiz-ui";
 import { GamePhase, SOUND_IDS } from "shared/types";
 
@@ -49,11 +53,15 @@ const judgeResultEvent = waitForEvent("JudgeResult");
 const playerEliminatedEvent = waitForEvent("PlayerEliminated");
 const gameFinishedEvent = waitForEvent("GameFinished");
 const phaseChangedEvent = waitForEvent("PhaseChanged");
+const explanationShowEvent = waitForEvent("ExplanationShow");
+const stickerCollectedEvent = waitForEvent("StickerCollected");
+const stickerCountEvent = waitForEvent("StickerCount");
 
 // ゲーム開始
 quizStartEvent.OnClientEvent.Connect(() => {
 	isEliminated = false;
 	hideAll();
+	hideStickerLabel();
 });
 
 // 問題表示
@@ -109,7 +117,13 @@ phaseChangedEvent.OnClientEvent.Connect((phase: unknown) => {
 	if (gamePhase === "waiting") {
 		isEliminated = false;
 		showWaiting();
+		hideStickerLabel();
 	}
+});
+
+// 解説表示
+explanationShowEvent.OnClientEvent.Connect((correctAnswer: unknown, explanation: unknown) => {
+	showExplanation(correctAnswer as string, explanation as string);
 });
 
 // ゲーム終了
@@ -119,4 +133,16 @@ gameFinishedEvent.OnClientEvent.Connect((winnerNames: unknown, hasWinner: unknow
 	if (hasWinner as boolean) {
 		playSound("Winner");
 	}
+});
+
+// シール取得通知
+stickerCollectedEvent.OnClientEvent.Connect((count: unknown) => {
+	updateStickerCount(count as number);
+	showStickerCollected();
+	playSound("Correct");
+});
+
+// シール初期カウント同期
+stickerCountEvent.OnClientEvent.Connect((count: unknown) => {
+	updateStickerCount(count as number);
 });
